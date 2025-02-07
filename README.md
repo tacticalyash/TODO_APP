@@ -14,11 +14,14 @@ Git
 3) Run 
    ```bash
    npm install
-4) ```bash 
+4) CD to frontend and install dependencies:
+   ```bash 
    cd frontend && npm install
-5)  ```bash
+5) CD to backend and install dependencies: 
+   ```bash
    cd .. && cd backend && pip install -r requirements.txt
-6) ```bash
+6) Start the App
+   ```bash
    cd .. && npm start
 
 
