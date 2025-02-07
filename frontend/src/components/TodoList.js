@@ -1,54 +1,67 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import TodoItem from "./TodoItem";
-import AddTodo from "./AddTodo";
+import React, { useState } from "react";
+import "./TodoList.css";
 
-const TodoList = () => {
-  const [todos, setTodos] = useState([]);
+const TodoList = ({ todos, deleteTodo, updateTodo }) => {
+  const [editMode, setEditMode] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [checkedStatus, setCheckedStatus] = useState({});
 
-  // Fetch todos from Flask API (only once on mount)
-  useEffect(() => {
-    axios.get("http://127.0.0.1:5000/api/todos")
-      .then(response => {
-        setTodos(response.data);
-      })
-      .catch(error => {
-        console.error("There was an error fetching the todos!", error);
-      });
-  }, []);  // Empty dependency array ensures the effect runs only once on mount
-
-  // Delete a todo
-  const deleteTodo = (id) => {
-    axios.delete(`http://127.0.0.1:5000/api/todos/${id}`)
-      .then(response => {
-        setTodos(todos.filter(todo => todo.id !== id));  // Remove deleted todo
-      })
-      .catch(error => {
-        console.error("There was an error deleting the todo!", error);
-      });
+  const startEditing = (todo) => {
+    setEditMode(todo.id);
+    setEditText(todo.title);
+    setCheckedStatus({ ...checkedStatus, [todo.id]: todo.completed });
   };
 
-  // Toggle the completion status of a todo
-  const toggleCompletion = (id) => {
-    const updatedTodos = todos.map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    );
-    setTodos(updatedTodos);
+  const handleCheckboxChange = (todo) => {
+    const newStatus = !todo.completed;
+    updateTodo(todo.id, todo.title, newStatus);
   };
+
+  const saveChanges = (id) => {
+    if (editText.trim() === "") return;
+    updateTodo(id, editText, checkedStatus[id]);
+    setEditMode(null);
+  };
+
+  const completedCount = todos.filter((todo) => todo.completed).length;
+  const uncompletedCount = todos.length - completedCount;
 
   return (
     <div className="todo-list">
-      <h1>Todo List</h1>
-      <AddTodo setTodos={setTodos} />  {/* Pass setTodos to AddTodo component */}
-      <div>
-        {todos.map(todo => (
-          <TodoItem
-            key={todo.id}
-            todo={todo}
-            deleteTodo={deleteTodo}
-            toggleCompletion={toggleCompletion}
-          />
-        ))}
+      <h2>Task List</h2>
+      {todos.map((todo) => (
+        <div key={todo.id} className={`todo-item ${todo.completed ? "completed" : ""}`}>
+          {editMode === todo.id ? (
+            <>
+              <input
+                type="text"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+              />
+              <button className="submit" onClick={() => saveChanges(todo.id)}>
+                Submit
+              </button>
+            </>
+          ) : (
+            <>
+              <input
+                type="checkbox"
+                checked={todo.completed}
+                onChange={() => handleCheckboxChange(todo)}
+              />
+              <span className="task-title">{todo.title}</span>
+              <button className="delete" onClick={() => deleteTodo(todo.id)}>
+                Delete
+              </button>
+              <button className="edit" onClick={() => startEditing(todo)}>
+                Edit
+              </button>
+            </>
+          )}
+        </div>
+      ))}
+      <div className="todo-footer">
+        Completed: {completedCount} | Uncompleted: {uncompletedCount}
       </div>
     </div>
   );
